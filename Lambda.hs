@@ -14,6 +14,7 @@ free_vars :: Expr -> [String]
 free_vars (Application e1 e2) = free_vars e1 `union` free_vars e2
 free_vars (Function x e) = [x' | x' <- free_vars e, x' /= x]
 free_vars (Variable x) = [x]
+free_vars (Macro m) = []
 
 -- 1.2. reduce a redex
 
@@ -31,6 +32,7 @@ reduce (Function x' e) x e2
                 n <- [1 ..]
                 replicateM n ['a' .. 'z']
         in reduce (Function z (reduce e x' (Variable z))) x e2
+reduce (Macro m) x e2 = Macro m
 
 -- Normal Evaluation
 -- 1.3. perform one step of Normal Evaluation
@@ -40,7 +42,7 @@ stepN (Application (Function x e1) e2) = reduce e1 x e2
 stepN (Application e1 e2)
     | e1 == stepN e1 = Application e1 (stepN e2)
     | otherwise = Application (stepN e1) e2
-stepN f@(Function x e)
+stepN f@(Function x e) -- = Function x (stepN e)
     | e == stepN e = f
     | otherwise = Function x (stepN e)
 stepN v = v
@@ -69,6 +71,7 @@ replace x e (Function y body)
   | otherwise = Function y (replace x e body)
 replace x e (Application e1 e2) =
     Application (replace x e e1) (replace x e e2)
+replace x e (Macro m) = Macro m
 
 isValue :: Expr -> Bool
 isValue (Variable _) = True
@@ -100,7 +103,14 @@ reduceAllA e
 -- 3.1. make substitutions into a expression with Macros
 
 evalMacros :: [(String, Expr)] -> Expr -> Expr
-evalMacros = undefined
+evalMacros context (Variable x) = Variable x
+evalMacros context (Function x e) = Function x (evalMacros context e)
+evalMacros context (Application e1 e2) =
+    Application (evalMacros context e1) (evalMacros context e2)
+evalMacros context macro@(Macro m) =
+    case lookup m context of
+        Just e -> evalMacros context e
+        Nothing -> macro
 
 -- 4.1. evaluate code sequence using given strategy
 

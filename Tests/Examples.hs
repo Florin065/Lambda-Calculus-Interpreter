@@ -44,9 +44,9 @@ m = f "x" $ a vx vx
 i = f "x" vx
 k = f "x" $ f "y" vx
 ki = f "x" $ f "y" vy
-c = f "f" $ f "x" $ f "y" $ (a (a vf vy) vx)
+c = f "f" $ f "x" $ f "y" $ a (a vf vy) vx
 b = f "f" $ f "g" $ f "x" $ a vf $ a vg vx
-b1 = f "f" $ f "g" $ f "x" $ f "y" $ a vf $ (a (a vg vx) vy)
+b1 = f "f" $ f "g" $ f "x" $ f "y" $ a vf $ a (a vg vx) vy
 y = f "f" $ a (f "x" $ a vf (a vx vx)) (f "x" $ a vf (a vx vx)) 
 
 -- Boolean values
