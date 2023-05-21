@@ -4,10 +4,11 @@
 
 module Parser (parse_expr, parse_code) where
 
+import Expr
+
 import Control.Monad
 import Control.Applicative
 import Data.Char ( isAlphaNum, isSpace, isAlpha )
-import Expr
 import GHC.Base (Alternative((<|>)))
 
 -- Parser data type
@@ -81,9 +82,6 @@ plusParser p = do
 startParser :: Parser a -> Parser [a]
 startParser p = plusParser p <|> return []
 
-spaceParser :: Parser String
-spaceParser = startParser (charParser ' ')
-
 charParser :: Char -> Parser Char
 charParser c =
     Parser (
@@ -94,8 +92,7 @@ charParser c =
 --- parse a variable => <variable> ---
 
 variableParser :: Parser Expr
-variableParser = do
-    Variable <$> identifierParser
+variableParser = Variable <$> identifierParser
 
 --- parse a function => '\' <variable> '.' <expr> ---
 
@@ -104,7 +101,7 @@ functionParser = do
     charParser '\\'
     name <- identifierParser
     charParser '.'
-    Function name <$> exprParser
+    Function name <$> atomParser
 
 --- parse a parenthesized expression => '(' <expr> ')' ---
 
@@ -121,7 +118,7 @@ applicationParser :: Parser Expr
 applicationParser = do
     f <- atomParser
     rest <- let restParser = do
-                    spaceParser
+                    startParser (charParser ' ')
                     arg <- atomParser
                     rest <- restParser <|> return []
                     return (arg : rest)
@@ -132,22 +129,8 @@ applicationParser = do
 macroParser :: Parser Expr
 macroParser = do
     charParser '$'
-    names <- identifierParser `sepBy1` spaceParser
-    return (foldl1 Application (map Macro names))
-
-sepBy1 :: Parser a -> Parser sep -> Parser [a]
-sepBy1 p sep = do
-    x <- p
-    xs <- many (sep >> p)
-    return ((: xs) x)
+    Macro <$> identifierParser
 
 -- 4.2. parse code
 parse_code :: String -> Code
 parse_code = undefined
-
--- (parse_expr "\\x.\\y.$body $param") (a (f "x" $ f "y" (macro "body")) (macro "param"))
-
--- expected: λx.λy.$body $param
--- found: λx.λy.($body $param)
-
--- help me with this error in macroParser

@@ -33,7 +33,7 @@ instance Show Expr where
     show (Application e1 (Application u v)) = show e1 ++ " (" ++ show e2 ++ ")"
         where e2 = Application u v
     show (Application e1 e2) = show e1 ++ (' ':show e2)
-    show (Macro m) = "$" ++ m
+    show (Macro m) = '$' : m
 
 -- equality instance
 instance Eq Expr where
