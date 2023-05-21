@@ -8,8 +8,9 @@ import Expr
 
 import Control.Monad
 import Control.Applicative
-import Data.Char ( isAlphaNum, isSpace, isAlpha )
+import Data.Char ( isAlphaNum, isAlpha )
 import GHC.Base (Alternative((<|>)))
+import Data.Maybe (fromMaybe)
 
 -- Parser data type
 
@@ -49,45 +50,25 @@ instance Alternative Parser where
 --- parse an expression ---
 
 parse_expr :: String -> Expr
-parse_expr input =
-    case parse exprParser input of
-        Just (expr, _) -> expr
-        Nothing -> error "Failed to parse expression"
-
-exprParser :: Parser Expr
-exprParser = applicationParser <|> atomParser
+parse_expr input = fromMaybe (error "Failed to parse expression")
+                             (parse applicationParser input >>= Just . fst)
 
 atomParser :: Parser Expr
 atomParser = variableParser <|> functionParser <|> parenthesizedExprParser <|> macroParser
 
 predicateParser :: (Char -> Bool) -> Parser Char
-predicateParser p =
-    Parser (
-        \case
-            [] -> Nothing
-            (x : xs) -> if p x then Just (x, xs) else Nothing)
+predicateParser p = Parser $ \case
+    [] -> Nothing
+    (x:xs) -> if p x then Just (x, xs) else Nothing
 
 identifierParser :: Parser String
-identifierParser = do  
+identifierParser = do
     x <- predicateParser isAlpha
-    xs <- startParser (predicateParser isAlphaNum)
+    xs <- many (predicateParser isAlphaNum)
     return ((: xs) x)
-
-plusParser :: Parser a -> Parser [a]
-plusParser p = do
-    x <- p
-    xs <- startParser p
-    return ((: xs) x)
-
-startParser :: Parser a -> Parser [a]
-startParser p = plusParser p <|> return []
 
 charParser :: Char -> Parser Char
-charParser c =
-    Parser (
-        \case
-            [] -> Nothing
-            (x : xs) -> if x == c then Just (c, xs) else Nothing)
+charParser c = predicateParser (== c)
 
 --- parse a variable => <variable> ---
 
@@ -108,7 +89,7 @@ functionParser = do
 parenthesizedExprParser :: Parser Expr
 parenthesizedExprParser = do
     charParser '('
-    x <- exprParser
+    x <- applicationParser
     charParser ')'
     return x
 
@@ -117,20 +98,26 @@ parenthesizedExprParser = do
 applicationParser :: Parser Expr
 applicationParser = do
     f <- atomParser
-    rest <- let restParser = do
-                    startParser (charParser ' ')
-                    arg <- atomParser
-                    rest <- restParser <|> return []
-                    return (arg : rest)
-            in restParser <|> return []
+    rest <- many (charParser ' ' *> atomParser)
     return (foldl Application f rest)
 
 --- parse a macro ---
+
 macroParser :: Parser Expr
-macroParser = do
-    charParser '$'
-    Macro <$> identifierParser
+macroParser = Macro <$> (charParser '$' *> identifierParser)
 
 -- 4.2. parse code
+
 parse_code :: String -> Code
-parse_code = undefined
+parse_code input = fromMaybe (error "Failed to parse code")
+                             (parse codeParser input >>= Just . fst)
+
+codeParser :: Parser Code
+codeParser = assignParser <|> (Evaluate <$> applicationParser)
+
+assignParser :: Parser Code
+assignParser = Assign <$> (identifierParser <* many (charParser ' ')
+                <*  charParser '=')
+                <*> (many (charParser ' ')
+                 *> applicationParser)
+
