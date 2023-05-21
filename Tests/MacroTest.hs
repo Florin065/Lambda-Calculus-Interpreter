@@ -10,7 +10,7 @@ import Tests.Testing
 import Tests.Examples
 
 test_ctx :: [(String, Expr)]
-test_ctx = [("m", m), ("and", land), ("true", ltrue), ("false", lfalse), ("mm", (macro "m"))]
+test_ctx = [("m", m), ("and", land), ("true", ltrue), ("false", lfalse), ("mm", macro "m")]
 
 eval_macro_test :: Test ()
 eval_macro_test = do
@@ -38,6 +38,6 @@ parse_macro_test = do
 
 macro_test :: IO ()
 macro_test = do
-    putStrLn $ "3. Macros"
+    putStrLn   "3. Macros"
     test_suite "3.1. evaluate macros" eval_macro_test 10
     test_suite "3.2. parse macros" parse_macro_test 5

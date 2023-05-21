@@ -28,6 +28,6 @@ parse_code_test = do
 
 code_test :: IO ()
 code_test = do
-    putStrLn $ "4. Code"
+    putStrLn   "4. Code"
     test_suite "4.1. evaluate code" eval_code_test 10
     test_suite "4.2. parse code" parse_code_test 5

@@ -87,33 +87,37 @@ app1 = [ f1
        ]
 
 -- Code examples
-p0 = [ (Assign "and" land)
-     , (Assign "true" ltrue)
-     , (Assign "false" lfalse)
-     , (Evaluate (a (a (macro "and") (macro "true")) (macro "false")))
+p0 = [
+     Assign "and" land,
+     Assign "true" ltrue,
+     Assign "false" lfalse,
+     Evaluate (a (a (macro "and") (macro "true")) (macro "false"))
      ]
 
-p1 = [ (Assign "and" land)
-     , (Assign "true" ltrue)
-     , (Assign "false" lfalse)
-     , (Assign "not" lnot)
-     , (Evaluate (a (a (macro "and") (macro "true")) (macro "false")))
-     , (Evaluate (a (a (macro "and") (macro "true")) (a (macro "not") (macro "false"))))
+p1 = [
+     Assign "and" land,
+     Assign "true" ltrue,
+     Assign "false" lfalse,
+     Assign "not" lnot,
+     Evaluate (a (a (macro "and") (macro "true")) (macro "false")),
+     Evaluate (a (a (macro "and") (macro "true")) (a (macro "not") (macro "false")))
      ]
 
-p2 = [ (Assign "and" land)
-     , (Assign "a" ltrue)
-     , (Assign "b" lfalse)
-     , (Evaluate (a (a (macro "and") (macro "a")) (macro "b")))
-     , (Assign "b" ltrue)
-     , (Evaluate (a (a (macro "and") (macro "a")) (macro "b")))
+p2 = [
+     Assign "and" land,
+     Assign "a" ltrue,
+     Assign "b" lfalse,
+     Evaluate (a (a (macro "and") (macro "a")) (macro "b")),
+     Assign "b" ltrue,
+     Evaluate (a (a (macro "and") (macro "a")) (macro "b"))
      ]
 
-p3 = [ (Assign "two" (num 2))
-     , (Assign "three" (num 3))
-     , (Evaluate (a nsucc (macro "two")))
-     , (Evaluate (a (a add (macro "two")) (macro "three")))
-     , (Evaluate (a (a mult (macro "two")) (macro "three")))
+p3 = [
+     Assign "two" (num 2),
+     Assign "three" (num 3),
+     Evaluate (a nsucc (macro "two")),
+     Evaluate (a (a add (macro "two")) (macro "three")),
+     Evaluate (a (a mult (macro "two")) (macro "three"))
      ]
 
 -- expected answers

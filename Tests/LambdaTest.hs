@@ -22,7 +22,7 @@ free_vars_test = do
 
 reduce_test :: Test ()
 reduce_test = do 
-    test_eq "reduce variable" (reduce vx "x" m) (m)
+    test_eq "reduce variable" (reduce vx "x" m) m
     test_eq "reduce non-related variable" (reduce vy "x" m) vy
     test_eq "reduce application simple" (reduce (a vx vx) "x" m) (a m m)
     test_eq "reduce function same var" (reduce (f "x" m) "x" e1) (f "x" m)
@@ -61,7 +61,7 @@ applicative_reduce_test = do
 
 lambda_test :: IO ()
 lambda_test = do
-    putStrLn $ "1. Evaluation"
+    putStrLn   "1. Evaluation"
     test_suite "1.1. free_vars" free_vars_test 10
     test_suite "1.2. reduce" reduce_test 30
     test_suite "1.3. stepN" normal_test 5

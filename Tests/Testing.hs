@@ -53,7 +53,7 @@ test_suite name tests points = catch (f tests) handle
     f (Test True test_io) = do
         putStrLn $ "\ESC[32m" ++ "[PASSED SUITE]" ++ "\ESC[0m " ++ name 
         test_io
-        putStrLn $ "+" ++ (show points) ++ " points"
+        putStrLn $ "+" ++ show points ++ " points"
     f (Test False test_io) = do
         putStrLn $ "\ESC[91m" ++ "[FAILED SUITE]" ++ "\ESC[0m " ++ name
         test_io

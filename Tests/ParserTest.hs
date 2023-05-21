@@ -27,5 +27,5 @@ parse_expr_test = do
 
 parser_test :: IO ()
 parser_test = do
-    putStrLn $ "2. Parsing"
+    putStrLn   "2. Parsing"
     test_suite "2.1. parse expressions" parse_expr_test 50

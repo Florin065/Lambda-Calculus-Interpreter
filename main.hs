@@ -40,7 +40,7 @@ lambda ctx = do
         "exit" -> return ()
         _ -> case parse_code input of
                 (Evaluate e) -> do
-                    putStrLn $ show $ reduceN (evalMacros ctx e)
+                    print (reduceN (evalMacros ctx e))
                     lambda ctx
                 (Assign s e) -> do
                     lambda ((s, evalMacros ctx e):ctx)

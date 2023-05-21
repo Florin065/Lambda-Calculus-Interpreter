@@ -37,8 +37,10 @@ reduce (Macro m) x e2 = Macro m
 
 stepN :: Expr -> Expr
 stepN (Application (Function x e1) e2) = reduce e1 x e2
-stepN (Application e1 e2) = if e1 == stepN e1 then Application e1 (stepN e2) else Application (stepN e1) e2
-stepN f@(Function x e) = Function x (stepN e)
+stepN (Application e1 e2) =
+    if e1 == stepN e1 then Application e1 $ stepN e2
+    else Application (stepN e1) e2
+stepN f@(Function x e) = Function x $ stepN e
 stepN (Macro m) = Macro m
 stepN v = v
 
@@ -102,10 +104,18 @@ evalMacros context (Macro m) = case lookup m context of
     Nothing -> Macro m
 
 -- 4.1. evaluate code sequence using given strategy
--- faci un pattern match pe linia de cod, daca e assign pui intr-o lista de perechi, daca e evaluate, evaluezi expresia si o pui in lista de expresii
 
 evalCode :: (Expr -> Expr) -> [Code] -> [Expr]
-evalCode strategy [] = []
--- daca e assign pui intr-o lista de perechi
-evalCode strategy (Assign x e : cs) = evalMacros [(x, strategy e)] (Macro x) : evalCode strategy cs
-evalCode strategy (Evaluate e : cs) = evalMacros [] (strategy e) : evalCode strategy cs
+evalCode _ [] = []
+evalCode strategy (Assign x e : cs) =
+    let updatedStrategy e' = if e' == Macro x then e else strategy e'
+    in evalCode updatedStrategy cs
+evalCode strategy (Evaluate e : cs) =
+    let evaluatedExpr = strategy (aux strategy e)
+    in evaluatedExpr : evalCode strategy cs
+        where aux :: (Expr -> Expr) -> Expr -> Expr
+              aux strategy expr = case expr of
+                Variable x -> strategy (Variable x)
+                Function x e -> Function x (aux strategy e)
+                Application e1 e2 -> Application (aux strategy e1) (aux strategy e2)
+                Macro m -> strategy (Macro m)
