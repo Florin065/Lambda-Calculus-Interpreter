@@ -27,13 +27,13 @@ macro = Macro -- add shorthand for Macro
 -- show instance 
 instance Show Expr where
     show (Variable x) = x
-    show (Function x (Application e1 e2)) = ('λ':x) ++ ".(" ++ show e ++ ")"
+    show (Function x (Application e1 e2)) = ('λ' : x) ++ ".(" ++ show e ++ ")"
         where e = Application e1 e2
-    show (Function x e) = ('λ':x) ++ ('.':show e)
+    show (Function x e) = ('λ' : x) ++ ('.' : show e)
     show (Application e1 (Application u v)) = show e1 ++ " (" ++ show e2 ++ ")"
         where e2 = Application u v
-    show (Application e1 e2) = show e1 ++ (' ':show e2)
-    show (Macro m) = (:) '$' m
+    show (Application e1 e2) = show e1 ++ (' ' : show e2)
+    show (Macro m) = '$' : m
 
 -- equality instance
 instance Eq Expr where
@@ -43,8 +43,7 @@ instance Eq Expr where
         equal (Variable x) (Variable y) env = case lookup x env of 
                                                 (Just xv) -> xv == y
                                                 Nothing -> x == y
-
-        equal (Function x e1) (Function y e2) env = equal e1 e2 ((x,y):env)
+        equal (Function x e1) (Function y e2) env = equal e1 e2 ((x,y) : env)
         equal (Application e1 e2) (Application e3 e4) env = equal e1 e3 env && equal e2 e4 env
         equal (Macro m1) (Macro m2) env = m1 == m2
         equal _ _ _ = False

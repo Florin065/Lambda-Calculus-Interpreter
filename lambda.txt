@@ -1,0 +1,49 @@
+1. free_vars: Această funcție primește un Expr și returnează o listă cu toate
+variabilele libere din acea expresie. O variabilă este considerată liberă dacă
+nu este legată într-o funcție.
+
+2. reduce: Această funcție primește trei argumente: un Expr, un nume de variabilă
+și o expresie. Scopul acestei funcții este să realizeze reducerea unui redex, adică
+să înlocuiască o variabilă cu expresia dată într-un Expr. Pentru fiecare tip de
+expresie (Variable, Function, Application, Macro), funcția verifică condițiile necesare
+pentru a efectua reducerea și aplică regulile de reducere corespunzătoare.
+
+3. findUnusedVar: Aceasta este o funcție helper care primește o listă de variabile
+utilizate și returnează o variabilă neutilizată. Folosește o abordare recursivă
+pentru a genera variabile noi pe baza literelor din alfabet.
+
+4. stepN: Această funcție primește un Expr și realizează o singură etapă de evaluare
+normală. Ea aplică regulile de evaluare normală pentru a alege următorul pas de evaluare.
+
+5. reduceN: Această funcție primește un Expr și realizează evaluare normală până
+când expresia nu mai poate fi redusă. Ea folosește funcția stepN pentru a efectua
+pas cu pas evaluarea normală.
+
+6. stepA: Această funcție primește un Expr și realizează o singură etapă de evaluare
+aplicativă. Ea aplică regulile de evaluare aplicativă pentru a alege următorul pas de evaluare.
+
+7. reduceA: Această funcție primește un Expr și realizează evaluare aplicativă
+până când expresia nu mai poate fi redusă.n Ea folosește funcția stepA pentru a efectua
+pas cu pas evaluarea aplicativă.
+
+8. evalMacros: Această funcție primește o listă de perechi (String, Expr) și un Expr.
+Scopul acestei funcții este să nînlocuiască toate aparițiile unei macrovariabile cu
+expresia corespunzătoare din lista de perechi.
+
+9. evalCode: Această funcție primește o strategie de evaluare (Expr -> Expr), o listă
+de instrucțiuni Code și returnează o listă de expresii rezultate din evaluarea instrucțiunilor.
+Instrucțiunile pot fi de două tipuri: Assign și Evaluate. Assign asociază o expresie unei variabile,
+iar Evaluate evaluează o expresie fără a o asocia unei variabile. Funcția aplică strategia de evaluare
+dată asupra fiecărei instrucțiuni și returnează lista rezultatelor.
+
+    Dacă capul listei cs are forma Evaluate expr, aplică funcția evalMacros asupra lui expr
+(cu un mediu de macro-uri gol) și apoi aplică funcția strategy rezultatului obținut. Această
+expresie evaluată este apoi procesată recursiv prin aplicarea aceleiași funcții strategy asupra
+restului de Code-uri din lista cs. Rezultatul este o nouă listă în care fiecare expresie a fost
+evaluată folosind strategia specificată de strategy.
+
+    Dacă capul listei cs are forma Assign str expr, se efectuează o operație de atribuire a variabilei.
+Pentru fiecare expr' din lista de Code-uri evaluate evalCode strategy cs, se creează un nou mediu de
+macro-uri cu o singură legare între str și expr'. Apoi, se aplică funcția strategy asupra lui expr
+folosind acest mediu de macro-uri modificat. Expresia rezultată este adăugată la lista finală. Procesul
+se repetă pentru fiecare expr' din lista evalCode strategy cs, rezultând o listă de expresii evaluate.

@@ -1,16 +1,15 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
 {-# LANGUAGE LambdaCase #-}
+{-# HLINT ignore "Use <$>" #-}
 
 module Parser (parse_expr, parse_code) where
 
 import Expr
 
-import Control.Monad
-import Control.Applicative
-import Data.Char ( isAlphaNum, isAlpha )
-import GHC.Base (Alternative((<|>)))
-import Data.Maybe (fromMaybe)
+import Control.Monad ()
+import Control.Applicative ( Alternative(..) )
+import Data.Char ( isAlpha )
 
 -- Parser data type
 
@@ -50,22 +49,26 @@ instance Alternative Parser where
 --- parse an expression ---
 
 parse_expr :: String -> Expr
-parse_expr input = fromMaybe (error "Failed to parse expression")
-                             (parse applicationParser input >>= Just . fst)
+parse_expr input = maybe (error "Failed to parse expression") fst $ parse applicationParser input
+
+--- parse an atom => <variable> | '\' <variable> '.' <expr> | '(' <expr> ')' | '$' <variable> ---
 
 atomParser :: Parser Expr
 atomParser = variableParser <|> functionParser <|> parenthesizedExprParser <|> macroParser
 
+--- parse a predicate => <predicate> ---
+
 predicateParser :: (Char -> Bool) -> Parser Char
 predicateParser p = Parser $ \case
-    [] -> Nothing
-    (x:xs) -> if p x then Just (x, xs) else Nothing
+    "" -> Nothing
+    (x : xs) -> if p x then Just (x, xs) else Nothing
+
+--- parse an identifier => <identifier> ---
 
 identifierParser :: Parser String
-identifierParser = do
-    x <- predicateParser isAlpha
-    xs <- many (predicateParser isAlphaNum)
-    return ((: xs) x)
+identifierParser = some $ predicateParser isAlpha
+
+--- parse a character => <char> ---
 
 charParser :: Char -> Parser Char
 charParser c = predicateParser (== c)
@@ -89,9 +92,9 @@ functionParser = do
 parenthesizedExprParser :: Parser Expr
 parenthesizedExprParser = do
     charParser '('
-    x <- applicationParser
+    expr <- applicationParser
     charParser ')'
-    return x
+    return expr
 
 --- parse an application <expr> <expr> ---
 
@@ -99,7 +102,7 @@ applicationParser :: Parser Expr
 applicationParser = do
     f <- atomParser
     rest <- many (charParser ' ' *> atomParser)
-    return (foldl Application f rest)
+    return $ foldl Application f rest
 
 --- parse a macro ---
 
@@ -109,15 +112,16 @@ macroParser = Macro <$> (charParser '$' *> identifierParser)
 -- 4.2. parse code
 
 parse_code :: String -> Code
-parse_code input = fromMaybe (error "Failed to parse code")
-                             (parse codeParser input >>= Just . fst)
+parse_code input = maybe (error "Failed to parse code") fst $ parse (assignParser <|> evaluateParser) input
 
-codeParser :: Parser Code
-codeParser = assignParser <|> (Evaluate <$> applicationParser)
+--- parse an evaluation => <expr> ---
+
+evaluateParser :: Parser Code
+evaluateParser = Evaluate <$> applicationParser
+
+--- parse an assignment => <identifier> '=' <expr> ---
 
 assignParser :: Parser Code
-assignParser = Assign <$> (identifierParser <* many (charParser ' ')
-                <*  charParser '=')
-                <*> (many (charParser ' ')
-                 *> applicationParser)
-
+assignParser = Assign
+                <$> (identifierParser <* many (charParser ' ') <* charParser '=')
+                <*> (many (charParser ' ') *> applicationParser)

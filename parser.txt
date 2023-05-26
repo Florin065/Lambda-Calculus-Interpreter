@@ -1,0 +1,52 @@
+1. Parser - Este un nou tip de date definitiv în modulul Parser. Acesta este un tip monad,
+care reprezintă un parser care primește un șir de caractere și încearcă să parseze
+o valoare din acest șir. parse este funcția care realizează efectiv parsingul și
+primește un șir de caractere și returnează o valoare parsată împreună cu șirul de caractere rămas.
+
+2. parse_expr - Aceasta este funcția principală pentru parsarea unei expresii.
+Primește un șir de caractere și folosește applicationParser pentru a parsa o expresie.
+Dacă parsarea reușește, se returnează expresia rezultată. În caz contrar, se aruncă o eroare.
+
+3. atomParser - Aceasta este o funcție care parsează un atom dintr-un șir de caractere.
+Un atom poate fi o variabilă, o funcție, o expresie între paranteze sau o macrovariabilă.
+Folosește parserele variableParser, functionParser, parenthesizedExprParser și macroParser
+într-o disjuncție pentru a încerca să parseze unul dintre aceste atomi.
+
+4. predicateParser - Aceasta este o funcție care primește un predicat și parsează
+un caracter care satisface acel predicat dintr-un șir de caractere.
+
+5. identifierParser - Aceasta este o funcție care parsează un identificator
+(o secvență de litere) dintr-un șir de caractere.
+
+6. charParser - Aceasta este o funcție care parsează un caracter specific dintr-un șir de caractere.
+
+7. variableParser - Aceasta este o funcție care parsează o variabilă dintr-un șir de caractere.
+Folosește identifierParser pentru a parsează un identificator și apoi construiește
+un Variable din acel identificator.
+
+8. functionParser - Aceasta este o funcție care parsează o funcție lambda dintr-un șir de caractere.
+Parsează un caracter '' urmat de un identificator, apoi un caracter '.' și în cele din urmă parsează
+un atom. Construiește un Function cu numele și atomul parsate.
+
+9. parenthesizedExprParser - Aceasta este o funcție care parsează o expresie între paranteze dintr-un
+șir de caractere. Parsează un caracter '(', urmează apelul recursiv al applicationParser și apoi
+parsează un caracter ')'. Returnează expresia rezultată.
+
+10. applicationParser - Aceasta este o funcție care parsează o aplicație de expresii dintr-un șir
+de caractere. Folosește atomParser pentru a parsa prima expresie și apoi parsează zero sau mai multe
+perechi de spații urmate de atomi. Construiește o structură de aplicație de expresii folosind foldl.
+
+11. macroParser - Aceasta este o funcție care parsează o macrovariabilă dintr-un șir de caractere.
+Parsează un caracter '$' urmat de un identificator și construiește un Macro cu identificatorul parsat.
+
+12. parse_code - Aceasta este funcția principală pentru parsarea codului. Primește un șir de caractere
+și folosește assignParser și evaluateParser într-o disjuncție pentru a parsa o atribuire sau o evaluare.
+Dacă parsarea reușește, se returnează codul rezultat. În caz contrar, se aruncă o eroare.
+
+13. evaluateParser - Aceasta este o funcție care parsează o evaluare de expresie dintr-un șir de caractere.
+Folosește applicationParser pentru a parsa expresia și construiește un Evaluate cu expresia parsată.
+
+14. assignParser - Aceasta este o funcție care parsează o atribuire dintr-un șir de caractere. Parsează un
+identificator, urmat de zero sau mai multe spații, urmate de caracterul '=', urmate de zero sau mai multe
+spații și în cele din urmă parsează o aplicație de expresii. Construiește un Assign
+cu identificatorul și expresia parsate.
