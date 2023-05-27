@@ -10,15 +10,15 @@ import Data.List (union, delete, (\\))
 
 free_vars :: Expr -> [String]
 free_vars (Variable x) = [x]
-free_vars (Function x e) = delete x $ free_vars e
-free_vars (Application e1 e2) = free_vars e1 `union` free_vars e2
-free_vars (Macro m) = [m]
+free_vars (Function x e) = x `delete` free_vars e
+free_vars (Application e1 e2) = free_vars e2 `union` free_vars e1
+free_vars (Macro x) = [x]
 
 --- 1.2. reduce a redex ---
 
 reduce :: Expr -> String -> Expr -> Expr
-reduce expr@(Variable x) y e1
-    | x == y = e1
+reduce expr@(Variable x) y e
+    | x == y = e
     | otherwise = expr
 reduce expr@(Function x e) y e'
     | x == y = expr
@@ -42,7 +42,7 @@ stepN expr@(Variable x) = expr
 stepN (Function x e) = Function x $ stepN e
 stepN (Application e1 e2) =
     case e1 of
-        Variable _ -> Application e1 (stepN e2)
+        Variable _ -> Application e1 $ stepN e2
         Function x' e1' -> reduce e1' x' e2
         _ -> Application (stepN e1) e2
 stepN expr@(Macro _) = expr
@@ -63,10 +63,10 @@ reduceAllN e
 --- 1.5. perform one step of Applicative Evaluation ---
 
 stepA :: Expr -> Expr
-stepA (Function x e1) = Function x (stepA e1)
+stepA (Function x e1) = Function x $ stepA e1
 stepA (Application e1 e2) =
     case e1 of
-        Variable _ -> Application e1 (stepA e2)
+        Variable _ -> Application e1 $ stepA e2
         Function x' e1' ->
             case e2 of
                 Variable _ -> reduce e1' x' e2
