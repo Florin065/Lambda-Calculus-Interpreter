@@ -9,43 +9,38 @@ import Data.List (union, delete, (\\))
 --- 1.1. find free variables of a Expr ---
 
 free_vars :: Expr -> [String]
-free_vars (Variable x) = [x]
-free_vars (Function x e) = x `delete` free_vars e
+free_vars (Variable s) = [s]
+free_vars (Function s e) = s `delete` free_vars e
 free_vars (Application e1 e2) = free_vars e2 `union` free_vars e1
-free_vars (Macro x) = [x]
+free_vars (Macro m) = [m]
 
 --- 1.2. reduce a redex ---
 
 reduce :: Expr -> String -> Expr -> Expr
-reduce expr@(Variable x) y e
-    | x == y = e
+reduce expr@(Variable s) s' e
+    | s == s' = e
     | otherwise = expr
-reduce expr@(Function x e) y e'
-    | x == y = expr
-    | x `notElem` free_vars e' = Function x (reduce e y e')
-    | otherwise = let z = findUnusedVar $ free_vars e `union` free_vars e'
-                  in reduce (Function z (reduce e x (Variable z))) y e'
-reduce (Application e1 e2) x e = Application (reduce e1 x e) (reduce e2 x e)
+reduce expr@(Function s e) s' e'
+    | s == s' = expr
+    | s `notElem` free_vars e' = Function s (reduce e s' e')
+    | otherwise =   let z = unusedVars $ free_vars e `union` free_vars e'
+                        unusedVars usedVars = head (vars \\ usedVars)
+                        vars = [show x | x <- ['a' .. 'z']]
+                    in reduce (Function z (reduce e s (Variable z))) s' e'
+reduce (Application e1 e2) s e = Application (reduce e1 s e) (reduce e2 s e)
 reduce expr@(Macro _) _ _ = expr
-
---- find unused variable ---
-
-findUnusedVar :: [String] -> String
-findUnusedVar usedVars = head (vars \\ usedVars)
-    where vars = [c : cs | cs <- "" : vars, c <- ['a' .. 'z']]
 
 --- Normal Evaluation ---
 --- 1.3. perform one step of Normal Evaluation ---
 
 stepN :: Expr -> Expr
-stepN expr@(Variable x) = expr
-stepN (Function x e) = Function x $ stepN e
+stepN (Function s e) = Function s $ stepN e
 stepN (Application e1 e2) =
     case e1 of
         Variable _ -> Application e1 $ stepN e2
-        Function x' e1' -> reduce e1' x' e2
+        Function s e -> reduce e s e2
         _ -> Application (stepN e1) e2
-stepN expr@(Macro _) = expr
+stepN expr = expr
 
 --- 1.4. perform Normal Evaluation ---
 
@@ -63,17 +58,17 @@ reduceAllN e
 --- 1.5. perform one step of Applicative Evaluation ---
 
 stepA :: Expr -> Expr
-stepA (Function x e1) = Function x $ stepA e1
+stepA (Function s e) = Function s $ stepA e
 stepA (Application e1 e2) =
     case e1 of
         Variable _ -> Application e1 $ stepA e2
-        Function x' e1' ->
+        Function s e ->
             case e2 of
-                Variable _ -> reduce e1' x' e2
-                Function _ _ -> reduce e1' x' e2
-                _ -> Application (Function x' e1') (stepA e2)
+                Variable _ -> reduce e s e2
+                Function _ _ -> reduce e s e2
+                _ -> Application e1 $ stepA e2
         _ -> Application (stepA e1) e2
-stepA var = var
+stepA expr = expr
 
 --- 1.6. perform Applicative Evaluation ---
 
@@ -90,8 +85,8 @@ reduceAllA e
 --- 3.1. make substitutions into a expression with Macros ---
 
 evalMacros :: [(String, Expr)] -> Expr -> Expr
-evalMacros _ expr@(Variable x) = expr
-evalMacros context (Function x e) = Function x (evalMacros context e)
+evalMacros _ expr@(Variable _) = expr
+evalMacros context (Function s e) = Function s (evalMacros context e)
 evalMacros context (Application e1 e2) = Application (evalMacros context e1) (evalMacros context e2)
 evalMacros context expr@(Macro m) = maybe expr (evalMacros context) (lookup m context)
 
@@ -99,5 +94,5 @@ evalMacros context expr@(Macro m) = maybe expr (evalMacros context) (lookup m co
 
 evalCode :: (Expr -> Expr) -> [Code] -> [Expr]
 evalCode _ [] = []
-evalCode strategy (Evaluate expr : cs) = strategy (evalMacros [] expr) : evalCode strategy cs
-evalCode strategy (Assign str expr : cs) = [strategy (evalMacros [(str, expr)] expr') | expr' <- evalCode strategy cs]
+evalCode strategy (Evaluate e : xs) = strategy (evalMacros [] e) : evalCode strategy xs
+evalCode strategy (Assign s e : xs) = [strategy (evalMacros [(s, e)] e') | e' <- evalCode strategy xs]

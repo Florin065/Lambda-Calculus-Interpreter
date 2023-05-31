@@ -24,7 +24,7 @@ instance Monad Parser where
     (>>=) (Parser p) f = Parser (\input ->
         case p input of
             Nothing -> Nothing
-            Just (x, remaining) -> parse (f x) remaining)
+            Just (x, xs) -> parse (f x) xs)
 
 instance Applicative Parser where
     pure = return
@@ -49,12 +49,12 @@ instance Alternative Parser where
 --- parse an expression ---
 
 parse_expr :: String -> Expr
-parse_expr input = maybe (error "Failed to parse expression") fst $ parse applicationParser input
+parse_expr input = maybe (error "Fail") fst $ parse applicationParser input
 
---- parse an atom => <variable> | '\' <variable> '.' <expr> | '(' <expr> ')' | '$' <variable> ---
+--- parse an atom => <variable> | '\' <variable> '.' <expr> | '(' <expr> ')' | '$' <expr> ---
 
 atomParser :: Parser Expr
-atomParser = variableParser <|> functionParser <|> parenthesizedExprParser <|> macroParser
+atomParser = variableParser <|> functionParser <|> parenthesizedParser <|> macroParser
 
 --- parse a predicate => <predicate> ---
 
@@ -73,46 +73,37 @@ identifierParser = some $ predicateParser isAlpha
 charParser :: Char -> Parser Char
 charParser c = predicateParser (== c)
 
---- parse a variable => <variable> ---
+--- parse a variable => <identifier> ---
 
 variableParser :: Parser Expr
 variableParser = Variable <$> identifierParser
 
---- parse a function => '\' <variable> '.' <expr> ---
+--- parse a function => '\\' <identifier> '.' <expr> ---
 
 functionParser :: Parser Expr
-functionParser = do
-    charParser '\\'
-    name <- identifierParser
-    charParser '.'
-    Function name <$> atomParser
+functionParser = Function <$> (charParser '\\' *> identifierParser <* charParser '.')
+                          <*> atomParser
 
 --- parse a parenthesized expression => '(' <expr> ')' ---
 
-parenthesizedExprParser :: Parser Expr
-parenthesizedExprParser = do
-    charParser '('
-    expr <- applicationParser
-    charParser ')'
-    return expr
+parenthesizedParser :: Parser Expr
+parenthesizedParser = charParser '(' *> applicationParser <* charParser ')'
 
---- parse an application <expr> <expr> ---
+--- parse an application => <expr> <expr> ---
 
 applicationParser :: Parser Expr
-applicationParser = do
-    f <- atomParser
-    rest <- many (charParser ' ' *> atomParser)
-    return $ foldl Application f rest
+applicationParser = foldl Application <$> atomParser
+                                      <*> many (charParser ' ' *> atomParser)
 
---- parse a macro ---
+--- parse a macro => '$' <identifier> ---
 
 macroParser :: Parser Expr
 macroParser = Macro <$> (charParser '$' *> identifierParser)
 
--- 4.2. parse code
+--- 4.2. parse code ---
 
 parse_code :: String -> Code
-parse_code input = maybe (error "Failed to parse code") fst $ parse (assignParser <|> evaluateParser) input
+parse_code input = maybe (error "Fail") fst $ parse (assignParser <|> evaluateParser) input
 
 --- parse an evaluation => <expr> ---
 
